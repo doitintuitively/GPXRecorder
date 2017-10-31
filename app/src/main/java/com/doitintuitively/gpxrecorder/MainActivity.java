@@ -18,7 +18,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.io.File;
@@ -45,9 +44,10 @@ public class MainActivity extends AppCompatActivity {
 
   private LocationManager locationManager;
   private LocationListener locationListener;
-  private TextView textViewHistory;
   private Button buttonStart;
-  private ScrollView scroll;
+  private TextView textViewLatLong;
+  private TextView textViewAltitude;
+  private TextView textViewAccuracy;
 
   private boolean started = false;
 
@@ -99,12 +99,17 @@ public class MainActivity extends AppCompatActivity {
           }
         });
 
-    textViewHistory = (TextView) findViewById(R.id.textViewHistory);
-    scroll = (ScrollView) findViewById(R.id.scroll);
+    textViewLatLong = (TextView) findViewById(R.id.tv_lat_long);
+    textViewAltitude = (TextView) findViewById(R.id.tv_altitude);
+    textViewAccuracy = (TextView) findViewById(R.id.tv_accuracy);
   }
 
   private void recordLocation(Location location) {
-    String displayText = "(" + location.getLatitude() + ", " + location.getLongitude();
+    writeLocationToFile(location);
+    updateLocationText(location);
+  }
+
+  private void writeLocationToFile(Location location) {
     String gpxText =
         "\t\t<trkpt lat=\""
             + location.getLatitude()
@@ -112,18 +117,11 @@ public class MainActivity extends AppCompatActivity {
             + location.getLongitude()
             + "\">";
     if (location.getProvider().equals("gps")) {
-      displayText += ", " + location.getAltitude();
       gpxText += "<ele>" + location.getAltitude() + "</ele>";
     }
-
     DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     String time = dateTime.format(new Date(location.getTime()));
     gpxText += "<time>" + time + "</time></trkpt>";
-    displayText += ") Accuracy = " + location.getAccuracy() + " Time = " + time + "\n";
-
-    textViewHistory.append(displayText);
-    scroll.fullScroll(View.FOCUS_DOWN);
-
     if (printWriter != null) {
       printWriter.println(gpxText);
     }
@@ -176,15 +174,18 @@ public class MainActivity extends AppCompatActivity {
 
     buttonStart.setText(R.string.main_stop);
     started = true;
-    textViewHistory.setText("");
     //        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10,
     // locationListener);
     locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
 
+    setUpOutputFile();
+  }
+
+  private void setUpOutputFile() {
     SimpleDateFormat dateTime = new SimpleDateFormat("yyyyMMdd_HHmmss");
     dateTime.setTimeZone(TimeZone.getDefault());
-    String currentDateandTime = dateTime.format(new Date());
-    String fileName = currentDateandTime + ".gpx";
+    String currentDateAndTime = dateTime.format(new Date());
+    String fileName = currentDateAndTime + ".gpx";
     Log.d(TAG, fileName);
 
     if (isExternalStorageReadable() && isExternalStorageWritable()) {
@@ -305,5 +306,15 @@ public class MainActivity extends AppCompatActivity {
       return true;
     }
     return false;
+  }
+
+  private void updateLocationText(Location location) {
+    String lat_long_text = location.getLatitude() + ", " + location.getLongitude();
+    textViewLatLong.setText(lat_long_text);
+
+    if (location.getProvider().equals("gps")) {
+      textViewAltitude.setText(String.valueOf(location.getAltitude()));
+    }
+    textViewAccuracy.setText("Accuracy = " + location.getAccuracy());
   }
 }

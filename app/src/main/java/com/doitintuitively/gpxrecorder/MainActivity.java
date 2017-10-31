@@ -8,6 +8,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -37,10 +38,11 @@ public class MainActivity extends AppCompatActivity {
     private static final int MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE = 2;
     private static final int MY_PERMISSIONS_ACCESS_FINE_LOCATION = 1;
 
-    private static String gpxHeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<gpx version=\"1.0\">\n" +
-            "\t<name>Example gpx</name>\n" +
-            "\t<trk><name>Track</name><number>1</number><trkseg>";
+    private static String gpxHeader =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                    + "<gpx version=\"1.0\">\n"
+                    + "\t<name>Example gpx</name>\n"
+                    + "\t<trk><name>Track</name><number>1</number><trkseg>";
 
     private LocationManager locationManager;
     private LocationListener locationListener;
@@ -60,13 +62,11 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             requestLocationPermission();
         }
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
             requestFilePermission();
         }
@@ -75,31 +75,32 @@ public class MainActivity extends AppCompatActivity {
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
         // Define a listener that responds to location updates
-        locationListener = new LocationListener() {
-            public void onLocationChanged(Location location) {
-                // Called when a new location is found by the network location provider.
-                recordLocation(location);
-            }
+        locationListener =
+                new LocationListener() {
+                    public void onLocationChanged(Location location) {
+                        recordLocation(location);
+                    }
 
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-            }
+                    public void onStatusChanged(String provider, int status, Bundle extras) {
+                    }
 
-            public void onProviderEnabled(String provider) {
-            }
+                    public void onProviderEnabled(String provider) {
+                    }
 
-            public void onProviderDisabled(String provider) {
-            }
+                    public void onProviderDisabled(String provider) {
+                    }
         };
 
         buttonStart = (Button) findViewById(R.id.button_start);
-        buttonStart.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (!started) {
-                    requestLocationUpdates();
-                } else {
-                    stopLocationUpdates();
-                }
-            }
+        buttonStart.setOnClickListener(
+                new View.OnClickListener() {
+                    public void onClick(View v) {
+                        if (!started) {
+                            requestLocationUpdates();
+                        } else {
+                            stopLocationUpdates();
+                        }
+                    }
         });
 
         textViewHistory = (TextView) findViewById(R.id.textViewHistory);
@@ -108,7 +109,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void recordLocation(Location location) {
         String displayText = "(" + location.getLatitude() + ", " + location.getLongitude();
-        String gpxText = "\t\t<trkpt lat=\"" + location.getLatitude() + "\" lon=\"" + location.getLongitude() + "\">";
+        String gpxText =
+                "\t\t<trkpt lat=\""
+                        + location.getLatitude()
+                        + "\" lon=\""
+                        + location.getLongitude()
+                        + "\">";
         if (location.getProvider().equals("gps")) {
             displayText += ", " + location.getAltitude();
             gpxText += "<ele>" + location.getAltitude() + "</ele>";
@@ -128,36 +134,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestLocationPermission() {
-        // Should we show an explanation?
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)) {
-            // Show an explanation to the user *asynchronously* -- don't block
-            // this thread waiting for the user's response! After the user
-            // sees the explanation, try again to request the permission.
-            ActivityCompat.requestPermissions(this,
+        if (ActivityCompat.shouldShowRequestPermissionRationale(
+                this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+            ActivityCompat.requestPermissions(
+                    this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     MY_PERMISSIONS_ACCESS_FINE_LOCATION);
         } else {
             // No explanation needed, we can request the permission.
-            ActivityCompat.requestPermissions(this,
+            ActivityCompat.requestPermissions(
+                    this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     MY_PERMISSIONS_ACCESS_FINE_LOCATION);
         }
     }
 
     private void requestFilePermission() {
-        // Should we show an explanation?
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            // Show an explanation to the user *asynchronously* -- don't block
-            // this thread waiting for the user's response! After the user
-            // sees the explanation, try again to request the permission.
-            ActivityCompat.requestPermissions(this,
+        if (ActivityCompat.shouldShowRequestPermissionRationale(
+                this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            ActivityCompat.requestPermissions(
+                    this,
                     new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE);
         } else {
             // No explanation needed, we can request the permission.
-            ActivityCompat.requestPermissions(this,
+            ActivityCompat.requestPermissions(
+                    this,
                     new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE);
         }
@@ -165,19 +167,22 @@ public class MainActivity extends AppCompatActivity {
 
     private void requestLocationUpdates() {
         // Register the listener with the Location Manager to receive location updates
-        if (ActivityCompat.checkSelfPermission(getApplicationContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(getApplicationContext(),
-                        Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(
+                getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(
+                getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
             requestLocationPermission();
             Toast.makeText(getApplicationContext(), "permission failed", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        buttonStart.setText("STOP");
+        buttonStart.setText(R.string.main_stop);
         started = true;
         textViewHistory.setText("");
-//        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10, locationListener);
+        //        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10,
+        // locationListener);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
 
         SimpleDateFormat dateTime = new SimpleDateFormat("yyyyMMdd_HHmmss");
@@ -202,13 +207,15 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         }
-
     }
 
     private void stopLocationUpdates() {
-        buttonStart.setText("START");
+        buttonStart.setText(getString(R.string.main_start));
         started = false;
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
             finish();
         }
@@ -216,8 +223,7 @@ public class MainActivity extends AppCompatActivity {
         locationManager.removeUpdates(locationListener);
 
         if (printWriter != null && fileOutputStream != null) {
-            printWriter.println("\t</trkseg></trk>\n" +
-                    "</gpx>\n");
+            printWriter.println("\t</trkseg></trk>\n" + "</gpx>\n");
             printWriter.flush();
             printWriter.close();
             try {
@@ -229,36 +235,25 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(
+            int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_ACCESS_FINE_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // permission was granted, yay! Do the
-                    // contacts-related task you need to do.
-                } else {
-                    // permission denied, boo!
+                if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
                     finish();
                 }
-                return;
+                break;
             }
             case MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE: {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // permission was granted, yay! Do the
-                    // contacts-related task you need to do.
-                } else {
-                    // permission denied, boo!
+                if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
                     finish();
                 }
-                return;
+                break;
             }
         }
     }
@@ -285,7 +280,6 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-
     @Override
     public void onStart() {
         super.onStart();
@@ -308,8 +302,8 @@ public class MainActivity extends AppCompatActivity {
     /* Checks if external storage is available to at least read */
     public boolean isExternalStorageReadable() {
         String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+        if (Environment.MEDIA_MOUNTED.equals(state)
+                || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
             return true;
         }
         return false;

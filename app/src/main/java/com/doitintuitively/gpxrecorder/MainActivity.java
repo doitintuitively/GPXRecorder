@@ -2,6 +2,7 @@ package com.doitintuitively.gpxrecorder;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -188,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
     String fileName = currentDateAndTime + ".gpx";
     Log.d(TAG, fileName);
 
-    if (isExternalStorageReadable() && isExternalStorageWritable()) {
+    if (isExternalStorageWritable()) {
       String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/gpx_recorder";
       File storageDir = new File(path);
       storageDir.mkdirs();
@@ -266,16 +267,12 @@ public class MainActivity extends AppCompatActivity {
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
-    // Handle action bar item clicks here. The action bar will
-    // automatically handle clicks on the Home/Up button, so long
-    // as you specify a parent activity in AndroidManifest.xml.
     int id = item.getItemId();
-
-    //noinspection SimplifiableIfStatement
     if (id == R.id.action_settings) {
+      Intent startSettingsActivity = new Intent(this, SettingsActivity.class);
+      startActivity(startSettingsActivity);
       return true;
     }
-
     return super.onOptionsItemSelected(item);
   }
 
@@ -289,32 +286,20 @@ public class MainActivity extends AppCompatActivity {
     super.onStop();
   }
 
-  /* Checks if external storage is available for read and write */
   public boolean isExternalStorageWritable() {
-    String state = Environment.getExternalStorageState();
-    if (Environment.MEDIA_MOUNTED.equals(state)) {
-      return true;
-    }
-    return false;
-  }
-
-  /* Checks if external storage is available to at least read */
-  public boolean isExternalStorageReadable() {
-    String state = Environment.getExternalStorageState();
-    if (Environment.MEDIA_MOUNTED.equals(state)
-        || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-      return true;
-    }
-    return false;
+    return Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED);
   }
 
   private void updateLocationText(Location location) {
-    String lat_long_text = location.getLatitude() + ", " + location.getLongitude();
-    textViewLatLong.setText(lat_long_text);
+    textViewLatLong.setText(
+        String.format(
+            getString(R.string.main_lat_long), location.getLatitude(), location.getLongitude()));
 
     if (location.getProvider().equals("gps")) {
-      textViewAltitude.setText(String.valueOf(location.getAltitude()));
+      textViewAltitude.setText(
+          String.format(getString(R.string.main_altitude), location.getAltitude()));
     }
-    textViewAccuracy.setText("Accuracy = " + location.getAccuracy());
+    textViewAccuracy.setText(
+        String.format(getString(R.string.main_accuracy), location.getAccuracy()));
   }
 }

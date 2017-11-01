@@ -3,4 +3,10 @@
   <string name="action_settings">Settings</string>
   <string name="main_start">Start</string>
   <string name="main_stop">Stop</string>
+  <string name="main_altitude">Altitude: %.1fm</string>
+  <string name="main_accuracy">Accuracy: %.1fm</string>
+  <string name="main_lat_long">%.8f, %.8f</string>
+  <string name="pref_update_frequency_key">PREF_UPDATED_FREQUENCY</string>
+  <string name="pref_update_frequency_label">Request location every</string>
+  <string name="pref_update_frequency_summary">%d seconds</string>
 </resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <com.doitintuitively.gpxrecorder.NumberPickerPreference
+    android:defaultValue="50"
+    android:inputType="number"
+    android:key="@string/pref_update_frequency_key"
+    android:summary="seconds"
+    android:title="@string/pref_update_frequency_label"/>
+
+</android.support.v7.preference.PreferenceScreen>

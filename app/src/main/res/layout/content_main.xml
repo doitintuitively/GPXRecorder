@@ -19,26 +19,28 @@
     android:layout_height="wrap_content"
     android:layout_above="@id/tv_altitude"
     android:layout_centerHorizontal="true"
-    android:text=""/>
+    android:text=""
+    android:textAppearance="@style/TextAppearance.AppCompat.Headline"/>
   <TextView
     android:id="@+id/tv_altitude"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_above="@id/tv_accuracy"
+    android:layout_above="@+id/tv_accuracy"
     android:layout_centerHorizontal="true"
-    android:text=""/>
+    android:text=""
+    android:textAppearance="@style/TextAppearance.AppCompat.Headline"/>
   <TextView
     android:id="@+id/tv_accuracy"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_above="@id/button_start"
     android:layout_centerHorizontal="true"
-    android:text=""/>
+    android:layout_centerInParent="true"
+    android:text=""
+    android:textAppearance="@style/TextAppearance.AppCompat.Headline"/>
   <Button
     android:id="@+id/button_start"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginTop="24dp"
     android:layout_alignParentBottom="true"
     android:layout_centerHorizontal="true"
     android:text="@string/main_start"/>

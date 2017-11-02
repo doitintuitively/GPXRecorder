@@ -1,17 +1,20 @@
 package com.doitintuitively.gpxrecorder;
 
 import android.Manifest;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.Environment;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -21,15 +24,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
+import com.doitintuitively.gpxrecorder.RecordLocationService.RecordLocationBinder;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -37,23 +32,37 @@ public class MainActivity extends AppCompatActivity {
   private static final int MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE = 2;
   private static final int MY_PERMISSIONS_ACCESS_FINE_LOCATION = 1;
 
-  private static String gpxHeader =
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-          + "<gpx version=\"1.0\">\n"
-          + "\t<name>Example gpx</name>\n"
-          + "\t<trk><name>Track</name><number>1</number><trkseg>";
-
-  private LocationManager locationManager;
-  private LocationListener locationListener;
   private Button buttonStart;
   private TextView textViewLatLong;
   private TextView textViewAltitude;
   private TextView textViewAccuracy;
 
-  private boolean started = false;
+  private RecordLocationService mRecordLocationService;
+  private boolean mBound = false;
+  private ServiceConnection mConnection =
+      new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+          // We've bound to LocalService, cast the IBinder and get LocalService instance
+          RecordLocationBinder binder = (RecordLocationBinder) service;
+          mRecordLocationService = binder.getService();
+          mRecordLocationService.setLocationUpdateCallback(locationUpdateCallback);
+          mBound = true;
+        }
 
-  private FileOutputStream fileOutputStream;
-  private PrintWriter printWriter;
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+          mBound = false;
+        }
+      };
+
+  private ILocationUpdateCallback locationUpdateCallback =
+      new ILocationUpdateCallback() {
+        @Override
+        public void update(Location location) {
+          updateLocationText(location);
+        }
+      };
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -62,70 +71,102 @@ public class MainActivity extends AppCompatActivity {
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
 
-    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-        != PackageManager.PERMISSION_GRANTED) {
-      requestLocationPermission();
-    }
-    if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        != PackageManager.PERMISSION_GRANTED) {
-      requestFilePermission();
-    }
-
-    // Acquire a reference to the system Location Manager
-    locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-
-    // Define a listener that responds to location updates
-    locationListener =
-        new LocationListener() {
-          public void onLocationChanged(Location location) {
-            recordLocation(location);
-          }
-
-          public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-          public void onProviderEnabled(String provider) {}
-
-          public void onProviderDisabled(String provider) {}
-        };
+    checkPermission();
 
     buttonStart = (Button) findViewById(R.id.button_start);
-    buttonStart.setOnClickListener(
-        new View.OnClickListener() {
-          public void onClick(View v) {
-            if (!started) {
-              requestLocationUpdates();
-            } else {
-              stopLocationUpdates();
-            }
-          }
-        });
-
     textViewLatLong = (TextView) findViewById(R.id.tv_lat_long);
     textViewAltitude = (TextView) findViewById(R.id.tv_altitude);
     textViewAccuracy = (TextView) findViewById(R.id.tv_accuracy);
+
+    setUpNotificationChannel();
   }
 
-  private void recordLocation(Location location) {
-    writeLocationToFile(location);
-    updateLocationText(location);
+  private void checkPermission() {
+    if (ActivityCompat.checkSelfPermission(
+                getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        && ActivityCompat.checkSelfPermission(
+                getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+      Toast.makeText(getApplicationContext(), "Please grant permission.", Toast.LENGTH_SHORT)
+          .show();
+      requestLocationPermission();
+    }
+    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        != PackageManager.PERMISSION_GRANTED) {
+      Toast.makeText(getApplicationContext(), "Please grant permission.", Toast.LENGTH_SHORT)
+          .show();
+      requestFilePermission();
+    }
   }
 
-  private void writeLocationToFile(Location location) {
-    String gpxText =
-        "\t\t<trkpt lat=\""
-            + location.getLatitude()
-            + "\" lon=\""
-            + location.getLongitude()
-            + "\">";
-    if (location.getProvider().equals("gps")) {
-      gpxText += "<ele>" + location.getAltitude() + "</ele>";
+  private void setUpStartButton() {
+    if (isServiceRunning(RecordLocationService.class)) {
+      buttonStart.setText(getString(R.string.main_stop));
+      // Re-bind to RecordLocationService in case MainActivity was killed and restarted.
+      Intent intent = new Intent(MainActivity.this, RecordLocationService.class);
+      Log.i(TAG, "re-binding");
+      bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    } else {
+      buttonStart.setText(getString(R.string.main_start));
     }
-    DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    String time = dateTime.format(new Date(location.getTime()));
-    gpxText += "<time>" + time + "</time></trkpt>";
-    if (printWriter != null) {
-      printWriter.println(gpxText);
+    buttonStart.setOnClickListener(
+        new View.OnClickListener() {
+          public void onClick(View v) {
+            // If RecordLocationService is running, unbind and stop it.
+            if (isServiceRunning(RecordLocationService.class)) {
+              Log.i(TAG, "Unbinding service");
+              unbindService(mConnection);
+              mBound = false;
+
+              Intent intent = new Intent(MainActivity.this, RecordLocationService.class);
+              intent.setAction(Constants.Action.ACTION_STOP);
+              startService(intent);
+
+              buttonStart.setText(getString(R.string.main_start));
+            } else {
+              checkPermission();
+              Log.i(TAG, "Service is not running. Starting service...");
+
+              Intent intent = new Intent(MainActivity.this, RecordLocationService.class);
+              intent.setAction(Constants.Action.ACTION_START);
+              startService(intent);
+
+              // Bind to RecordLocationService.
+              bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+
+              buttonStart.setText(getString(R.string.main_stop));
+            }
+          }
+        });
+  }
+
+  private void setUpNotificationChannel() {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+      NotificationManager mNotificationManager =
+          (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+      NotificationChannel mChannel;
+      mChannel =
+          new NotificationChannel(
+              Constants.Notification.DEFAULT_CHANNEL_ID,
+              getString(R.string.default_notification_channel_name),
+              NotificationManager.IMPORTANCE_LOW);
+      // Configure the notification channel.
+      mChannel.setDescription(getString(R.string.default_notification_channel_description));
+      mChannel.enableLights(false);
+      mChannel.enableVibration(false);
+      mNotificationManager.createNotificationChannel(mChannel);
     }
+  }
+
+  private boolean isServiceRunning(Class<?> serviceClass) {
+    ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+    for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+      if (serviceClass.getName().equals(service.service.getClassName())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private void requestLocationPermission() {
@@ -160,101 +201,26 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  private void requestLocationUpdates() {
-    // Register the listener with the Location Manager to receive location updates
-    if (ActivityCompat.checkSelfPermission(
-                getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED
-        && ActivityCompat.checkSelfPermission(
-                getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
-      requestLocationPermission();
-      Toast.makeText(getApplicationContext(), "permission failed", Toast.LENGTH_SHORT).show();
-      return;
-    }
-
-    buttonStart.setText(R.string.main_stop);
-    started = true;
-    //        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10,
-    // locationListener);
-    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-
-    setUpOutputFile();
-  }
-
-  private void setUpOutputFile() {
-    SimpleDateFormat dateTime = new SimpleDateFormat("yyyyMMdd_HHmmss");
-    dateTime.setTimeZone(TimeZone.getDefault());
-    String currentDateAndTime = dateTime.format(new Date());
-    String fileName = currentDateAndTime + ".gpx";
-    Log.d(TAG, fileName);
-
-    if (isExternalStorageWritable()) {
-      String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/gpx_recorder";
-      File storageDir = new File(path);
-      storageDir.mkdirs();
-      File file = new File(storageDir, fileName);
-      try {
-        fileOutputStream = new FileOutputStream(file);
-        printWriter = new PrintWriter(file);
-        Log.d(TAG, "Success opening file.");
-        printWriter.println(gpxHeader);
-      } catch (FileNotFoundException e) {
-        Toast.makeText(this, "Unable to create file", Toast.LENGTH_SHORT).show();
-        e.printStackTrace();
-        finish();
-      }
-    }
-  }
-
-  private void stopLocationUpdates() {
-    buttonStart.setText(getString(R.string.main_start));
-    started = false;
-    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED
-        && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
-      Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
-      finish();
-    }
-    // Remove the listener you previously added
-    locationManager.removeUpdates(locationListener);
-
-    if (printWriter != null && fileOutputStream != null) {
-      printWriter.println("\t</trkseg></trk>\n" + "</gpx>\n");
-      printWriter.flush();
-      printWriter.close();
-      try {
-        fileOutputStream.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-      Toast.makeText(this, "File saved", Toast.LENGTH_SHORT).show();
-    }
-  }
-
   @Override
   public void onRequestPermissionsResult(
       int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
     switch (requestCode) {
       case MY_PERMISSIONS_ACCESS_FINE_LOCATION:
-        {
-          // If request is cancelled, the result arrays are empty.
-          if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
-            finish();
-          }
-          break;
+        // If request is cancelled, the result arrays are empty.
+        if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+          Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
+          finish();
         }
+        break;
+
       case MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE:
-        {
-          // If request is cancelled, the result arrays are empty.
-          if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
-            finish();
-          }
-          break;
+        // If request is cancelled, the result arrays are empty.
+        if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+          Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
+          finish();
         }
+        break;
+      default:
     }
   }
 
@@ -279,15 +245,18 @@ public class MainActivity extends AppCompatActivity {
   @Override
   public void onStart() {
     super.onStart();
+    setUpStartButton();
   }
 
   @Override
   public void onStop() {
     super.onStop();
-  }
-
-  public boolean isExternalStorageWritable() {
-    return Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED);
+    // Unbind service if activity is being stopped.
+    if (mBound) {
+      Log.i(TAG, "Unbinding service");
+      unbindService(mConnection);
+      mBound = false;
+    }
   }
 
   private void updateLocationText(Location location) {

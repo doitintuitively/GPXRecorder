@@ -9,4 +9,8 @@
   <string name="pref_update_frequency_key">PREF_UPDATED_FREQUENCY</string>
   <string name="pref_update_frequency_label">Request location every</string>
   <string name="pref_update_frequency_summary">%d seconds</string>
+  <string name="notification_title">Recording location</string>
+  <string name="notification_message">This may impact your battery life.</string>
+  <string name="default_notification_channel_name">Recording status</string>
+  <string name="default_notification_channel_description">Shows when the app is recording location.</string>
 </resources>

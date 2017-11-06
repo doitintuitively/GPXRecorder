@@ -3,6 +3,7 @@ package com.doitintuitively.gpxrecorder;
 import android.Manifest;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.DialogFragment;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.ComponentName;
@@ -24,12 +25,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.doitintuitively.gpxrecorder.BatteryAlertDialogFragment.BatteryAlertDialogListener;
 import com.doitintuitively.gpxrecorder.RecordLocationService.RecordLocationBinder;
 
-/**
- * Main Activity.
- */
-public class MainActivity extends AppCompatActivity {
+/** Main Activity. */
+public class MainActivity extends AppCompatActivity implements BatteryAlertDialogListener {
 
   private static final String TAG = "MainActivity";
   private static final int MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE = 2;
@@ -129,19 +129,72 @@ public class MainActivity extends AppCompatActivity {
               mButtonStart.setText(getString(R.string.main_start));
             } else {
               checkPermission();
-              Log.i(TAG, "Service is not running. Starting service...");
-
-              Intent intent = new Intent(MainActivity.this, RecordLocationService.class);
-              intent.setAction(Constants.Action.ACTION_START);
-              startService(intent);
-
-              // Bind to RecordLocationService.
-              bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-
-              mButtonStart.setText(getString(R.string.main_stop));
+              // Show battery alert before proceeding.
+              BatteryAlertDialogFragment dialog = new BatteryAlertDialogFragment();
+              if (needToShowRatingAlert()) {
+                dialog.show(getFragmentManager(), "Alert");
+              } else {
+                startAndBindService();
+                mButtonStart.setText(getString(R.string.main_stop));
+              }
             }
           }
         });
+  }
+
+  private void startAndBindService() {
+    Log.i(TAG, "Service is not running. Starting service...");
+    Intent intent = new Intent(MainActivity.this, RecordLocationService.class);
+    intent.setAction(Constants.Action.ACTION_START);
+    startService(intent);
+
+    // Bind to RecordLocationService.
+    bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+  }
+
+  private boolean needToShowRatingAlert() {
+    return true;
+  }
+
+  /** Write in SharedPreferences that user don't want to show dialog again. */
+  private void doNotShowRatingAlertAgain() {
+    // TODO: Write to SharedPreferences.
+  }
+
+  /**
+   * When user pressed agree.
+   *
+   * @param dialog RatingAlertDialogFragment.
+   */
+  @Override
+  public void onDialogPositiveClick(DialogFragment dialog) {
+    Log.d(TAG, "User agreed to start.");
+    startAndBindService();
+    mButtonStart.setText(getString(R.string.main_stop));
+  }
+
+  /**
+   * When user pressed agree with do not show again.
+   *
+   * @param dialog RatingAlertDialogFragment.
+   */
+  @Override
+  public void onDialogPositiveClickWithChecked(DialogFragment dialog) {
+    Log.d(TAG, "User agreed to submit and do not show again");
+    doNotShowRatingAlertAgain();
+    startAndBindService();
+    mButtonStart.setText(getString(R.string.main_stop));
+  }
+
+  /**
+   * When user pressed cancel.
+   *
+   * @param dialog BatteryAlertDialogFragment.
+   */
+  @Override
+  public void onDialogNegativeClick(DialogFragment dialog) {
+    Log.d(TAG, "Cancel");
+    Toast.makeText(getApplicationContext(), "Operation canceled.", Toast.LENGTH_LONG).show();
   }
 
   private void setUpNotificationChannel() {

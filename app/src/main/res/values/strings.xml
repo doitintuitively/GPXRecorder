@@ -13,4 +13,7 @@
   <string name="notification_message">This may impact your battery life.</string>
   <string name="default_notification_channel_name">Recording status</string>
   <string name="default_notification_channel_description">Shows when the app is recording location.</string>
+  <string name="battery_alert_dialog_text">Requesting GPS location consumes battery quickly. Only use the app when you have a charger, or when you don\'t care about battery life. The developer is not responsible for a drained battery :p</string>
+  <string name="battery_alert_dialog_do_not_show_again">Do not show again</string>
+  <string name="battery_alert_dialog_title">Heads up…</string>
 </resources>

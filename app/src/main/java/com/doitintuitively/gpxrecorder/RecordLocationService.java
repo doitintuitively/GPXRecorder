@@ -32,6 +32,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+/**
+ * Foreground service that records GPS locations to a GPX file.
+ * Note that not only does this service execute in the foreground, but also holds the wakelock to
+ * prevent the device from sleeping. This impacts battery life, but it's doing what the user
+ * has requested, i.e. to record location over time.
+ */
 public class RecordLocationService extends Service {
 
   private static final String TAG = "RecordLocationService";
@@ -39,6 +45,7 @@ public class RecordLocationService extends Service {
   private FileOutputStream fileOutputStream;
   private PrintWriter printWriter;
   private boolean finishFlowExecuted = false;
+
   // Binder given to clients
   private final IBinder mBinder = new RecordLocationBinder();
   private ILocationUpdateCallback mLocationUpdateCallback;
@@ -50,7 +57,7 @@ public class RecordLocationService extends Service {
     }
   }
 
-  private static String gpxHeader =
+  private static final String gpxHeader =
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
           + "<gpx version=\"1.0\">\n"
           + "\t<name>Example gpx</name>\n"

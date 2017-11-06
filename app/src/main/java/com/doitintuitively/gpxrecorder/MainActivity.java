@@ -26,6 +26,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.doitintuitively.gpxrecorder.RecordLocationService.RecordLocationBinder;
 
+/**
+ * Main Activity.
+ */
 public class MainActivity extends AppCompatActivity {
 
   private static final String TAG = "MainActivity";

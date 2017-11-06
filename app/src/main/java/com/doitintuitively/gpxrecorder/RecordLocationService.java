@@ -15,6 +15,8 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
@@ -40,9 +42,9 @@ public class RecordLocationService extends Service {
   // Binder given to clients
   private final IBinder mBinder = new RecordLocationBinder();
   private ILocationUpdateCallback mLocationUpdateCallback;
+  WakeLock wakeLock;
 
   class RecordLocationBinder extends Binder {
-
     RecordLocationService getService() {
       return RecordLocationService.this;
     }
@@ -57,35 +59,58 @@ public class RecordLocationService extends Service {
   private LocationManager locationManager;
   private LocationListener locationListener;
 
-  private void recordLocation(Location location) {
-    writeLocationToFile(location);
+  @Nullable
+  @Override
+  public IBinder onBind(Intent intent) {
+    Log.i(TAG, "onBind");
+    return mBinder;
+  }
+
+  @Override
+  public int onStartCommand(Intent intent, int flags, int startId) {
+    if (intent.getAction() == null) {
+      Log.e(TAG, "No action provided.");
+      stopSelf();
+    }
+    switch (intent.getAction()) {
+      case Constants.Action.ACTION_START:
+        Log.i(TAG, "Start is called.");
+        showNotification();
+        setUpWakeLock();
+        Toast.makeText(this, "Recording location...", Toast.LENGTH_SHORT).show();
+        setUpOutputFile();
+        requestLocationUpdates();
+        break;
+      case Constants.Action.ACTION_STOP:
+        Log.i(TAG, "Stop is called.");
+        Toast.makeText(this, "Recording stopped", Toast.LENGTH_LONG).show();
+        executeFinishFlow();
+        stopForeground(true);
+        stopSelf();
+        break;
+      default:
+        Log.w(TAG, "Unknown action.");
+    }
+    return START_STICKY;
+  }
+
+  @Override
+  public void onCreate() {
+    super.onCreate();
+  }
+
+  @Override
+  public void onDestroy() {
+    Log.i(TAG, "Service is being destroyed.");
+    if (!finishFlowExecuted) {
+      Log.i(TAG, "File not saved! Saving now...");
+      executeFinishFlow();
+    }
+    super.onDestroy();
   }
 
   public void setLocationUpdateCallback(ILocationUpdateCallback callback) {
     mLocationUpdateCallback = callback;
-  }
-
-  private void executeFinishFlow() {
-    stopLocationUpdates();
-    saveAndCloseFile();
-  }
-
-  private void writeLocationToFile(Location location) {
-    String gpxText =
-        "\t\t<trkpt lat=\""
-            + location.getLatitude()
-            + "\" lon=\""
-            + location.getLongitude()
-            + "\">";
-    if (location.getProvider().equals("gps")) {
-      gpxText += "<ele>" + location.getAltitude() + "</ele>";
-    }
-    DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    String time = dateTime.format(new Date(location.getTime()));
-    gpxText += "<time>" + time + "</time></trkpt>";
-    if (printWriter != null) {
-      printWriter.println(gpxText);
-    }
   }
 
   private void requestLocationUpdates() {
@@ -96,7 +121,7 @@ public class RecordLocationService extends Service {
     locationListener =
         new LocationListener() {
           public void onLocationChanged(Location location) {
-            recordLocation(location);
+            writeLocationToFile(location);
             if (mLocationUpdateCallback != null) {
               mLocationUpdateCallback.update(location);
             }
@@ -117,8 +142,6 @@ public class RecordLocationService extends Service {
       stopSelf();
     }
     locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-
-    setUpOutputFile();
   }
 
   public boolean isExternalStorageWritable() {
@@ -154,6 +177,52 @@ public class RecordLocationService extends Service {
     }
   }
 
+  private void showNotification() {
+    Intent notificationIntent = new Intent(this, MainActivity.class);
+    PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+    Notification notification =
+        new NotificationCompat.Builder(this, Constants.Notification.DEFAULT_CHANNEL_ID)
+            .setContentTitle(getText(R.string.notification_title))
+            .setContentText(getText(R.string.notification_message))
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .build();
+
+    startForeground(Constants.Notification.NOTIFICATION_ID, notification);
+  }
+
+  private void setUpWakeLock() {
+    PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+    wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyWakelockTag");
+    wakeLock.acquire();
+  }
+
+  private void writeLocationToFile(Location location) {
+    String gpxText =
+        "\t\t<trkpt lat=\""
+            + location.getLatitude()
+            + "\" lon=\""
+            + location.getLongitude()
+            + "\">";
+    if (location.getProvider().equals("gps")) {
+      gpxText += "<ele>" + location.getAltitude() + "</ele>";
+    }
+    DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    String time = dateTime.format(new Date(location.getTime()));
+    gpxText += "<time>" + time + "</time></trkpt>";
+    if (printWriter != null) {
+      printWriter.println(gpxText);
+    }
+  }
+
+  private void executeFinishFlow() {
+    stopLocationUpdates();
+    saveAndCloseFile();
+    wakeLock.release();
+  }
+
   private void stopLocationUpdates() {
     if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
@@ -179,70 +248,5 @@ public class RecordLocationService extends Service {
       finishFlowExecuted = true;
       Toast.makeText(this, "File saved", Toast.LENGTH_SHORT).show();
     }
-  }
-
-  @Nullable
-  @Override
-  public IBinder onBind(Intent intent) {
-    Log.i(TAG, "onBind");
-    return mBinder;
-  }
-
-  @Override
-  public int onStartCommand(Intent intent, int flags, int startId) {
-    if (intent.getAction() == null) {
-      Log.e(TAG, "No action provided.");
-      stopSelf();
-    }
-    switch (intent.getAction()) {
-      case Constants.Action.ACTION_START:
-        Log.i(TAG, "Start is called.");
-        showNotification();
-        Toast.makeText(this, "Recording location...", Toast.LENGTH_SHORT).show();
-        requestLocationUpdates();
-        break;
-      case Constants.Action.ACTION_STOP:
-        Log.i(TAG, "Stop is called.");
-        Toast.makeText(this, "Recording stopped", Toast.LENGTH_LONG).show();
-        executeFinishFlow();
-        stopForeground(true);
-        stopSelf();
-        break;
-      default:
-        Log.w(TAG, "Unknown action.");
-    }
-
-    return START_STICKY;
-  }
-
-  @Override
-  public void onCreate() {
-    super.onCreate();
-  }
-
-  @Override
-  public void onDestroy() {
-    Log.i(TAG, "Service is being destroyed.");
-    if (!finishFlowExecuted) {
-      Log.i(TAG, "File not saved! Saving now...");
-      executeFinishFlow();
-    }
-    super.onDestroy();
-  }
-
-  private void showNotification() {
-    Intent notificationIntent = new Intent(this, MainActivity.class);
-    PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-
-    Notification notification =
-        new NotificationCompat.Builder(this, Constants.Notification.DEFAULT_CHANNEL_ID)
-            .setContentTitle(getText(R.string.notification_title))
-            .setContentText(getText(R.string.notification_message))
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .build();
-
-    startForeground(Constants.Notification.NOTIFICATION_ID, notification);
   }
 }

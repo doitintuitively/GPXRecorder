@@ -36,11 +36,12 @@ public class RecordLocationService extends Service {
 
   private FileOutputStream fileOutputStream;
   private PrintWriter printWriter;
+  private boolean finishFlowExecuted = false;
   // Binder given to clients
   private final IBinder mBinder = new RecordLocationBinder();
   private ILocationUpdateCallback mLocationUpdateCallback;
 
-  public class RecordLocationBinder extends Binder {
+  class RecordLocationBinder extends Binder {
 
     RecordLocationService getService() {
       return RecordLocationService.this;
@@ -62,6 +63,11 @@ public class RecordLocationService extends Service {
 
   public void setLocationUpdateCallback(ILocationUpdateCallback callback) {
     mLocationUpdateCallback = callback;
+  }
+
+  private void executeFinishFlow() {
+    stopLocationUpdates();
+    saveAndCloseFile();
   }
 
   private void writeLocationToFile(Location location) {
@@ -133,7 +139,7 @@ public class RecordLocationService extends Service {
       File file = new File(storageDir, fileName);
       try {
         fileOutputStream = new FileOutputStream(file);
-        printWriter = new PrintWriter(file);
+        printWriter = new PrintWriter(fileOutputStream);
         Log.d(TAG, "Success opening file.");
         printWriter.println(gpxHeader);
       } catch (FileNotFoundException e) {
@@ -156,9 +162,11 @@ public class RecordLocationService extends Service {
       Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
       stopSelf();
     }
-    // Remove the listener you previously added
+    // Remove the listener previously added.
     locationManager.removeUpdates(locationListener);
+  }
 
+  private void saveAndCloseFile() {
     if (printWriter != null && fileOutputStream != null) {
       printWriter.println("\t</trkseg></trk>\n" + "</gpx>\n");
       printWriter.flush();
@@ -168,6 +176,7 @@ public class RecordLocationService extends Service {
       } catch (IOException e) {
         e.printStackTrace();
       }
+      finishFlowExecuted = true;
       Toast.makeText(this, "File saved", Toast.LENGTH_SHORT).show();
     }
   }
@@ -195,7 +204,7 @@ public class RecordLocationService extends Service {
       case Constants.Action.ACTION_STOP:
         Log.i(TAG, "Stop is called.");
         Toast.makeText(this, "Recording stopped", Toast.LENGTH_LONG).show();
-        stopLocationUpdates();
+        executeFinishFlow();
         stopForeground(true);
         stopSelf();
         break;
@@ -214,6 +223,10 @@ public class RecordLocationService extends Service {
   @Override
   public void onDestroy() {
     Log.i(TAG, "Service is being destroyed.");
+    if (!finishFlowExecuted) {
+      Log.i(TAG, "File not saved! Saving now...");
+      executeFinishFlow();
+    }
     super.onDestroy();
   }
 

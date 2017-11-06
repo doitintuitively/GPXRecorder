@@ -22,6 +22,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
+import com.doitintuitively.gpxrecorder.Constants.Gpx;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -42,29 +43,20 @@ public class RecordLocationService extends Service {
 
   private static final String TAG = "RecordLocationService";
 
-  private FileOutputStream fileOutputStream;
-  private PrintWriter printWriter;
-  private boolean finishFlowExecuted = false;
-
+  private FileOutputStream mFileOutputStream;
+  private PrintWriter mPrintWriter;
+  private boolean mFinishFlowExecuted = false;
+  private ILocationUpdateCallback mLocationUpdateCallback;
+  private WakeLock mWakeLock;
+  private LocationManager mLocationManager;
+  private LocationListener mLocationListener;
   // Binder given to clients
   private final IBinder mBinder = new RecordLocationBinder();
-  private ILocationUpdateCallback mLocationUpdateCallback;
-  WakeLock wakeLock;
-
   class RecordLocationBinder extends Binder {
     RecordLocationService getService() {
       return RecordLocationService.this;
     }
   }
-
-  private static final String gpxHeader =
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-          + "<gpx version=\"1.0\">\n"
-          + "\t<name>Example gpx</name>\n"
-          + "\t<trk><name>Track</name><number>1</number><trkseg>";
-
-  private LocationManager locationManager;
-  private LocationListener locationListener;
 
   @Nullable
   @Override
@@ -109,7 +101,7 @@ public class RecordLocationService extends Service {
   @Override
   public void onDestroy() {
     Log.i(TAG, "Service is being destroyed.");
-    if (!finishFlowExecuted) {
+    if (!mFinishFlowExecuted) {
       Log.i(TAG, "File not saved! Saving now...");
       executeFinishFlow();
     }
@@ -122,10 +114,10 @@ public class RecordLocationService extends Service {
 
   private void requestLocationUpdates() {
     // Acquire a reference to the system Location Manager
-    locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+    mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
     // Define a listener that responds to location updates
-    locationListener =
+    mLocationListener =
         new LocationListener() {
           public void onLocationChanged(Location location) {
             writeLocationToFile(location);
@@ -148,7 +140,7 @@ public class RecordLocationService extends Service {
       Toast.makeText(getApplicationContext(), "Permission not granted.", Toast.LENGTH_SHORT).show();
       stopSelf();
     }
-    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
   }
 
   public boolean isExternalStorageWritable() {
@@ -168,10 +160,10 @@ public class RecordLocationService extends Service {
       storageDir.mkdirs();
       File file = new File(storageDir, fileName);
       try {
-        fileOutputStream = new FileOutputStream(file);
-        printWriter = new PrintWriter(fileOutputStream);
+        mFileOutputStream = new FileOutputStream(file);
+        mPrintWriter = new PrintWriter(mFileOutputStream);
         Log.d(TAG, "Success opening file.");
-        printWriter.println(gpxHeader);
+        mPrintWriter.println(Gpx.GPX_HEADER);
       } catch (FileNotFoundException e) {
         Toast.makeText(this, "Unable to create file", Toast.LENGTH_SHORT).show();
         Log.e(TAG, e.toString());
@@ -202,8 +194,8 @@ public class RecordLocationService extends Service {
 
   private void setUpWakeLock() {
     PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-    wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyWakelockTag");
-    wakeLock.acquire();
+    mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyWakelockTag");
+    mWakeLock.acquire();
   }
 
   private void writeLocationToFile(Location location) {
@@ -219,15 +211,15 @@ public class RecordLocationService extends Service {
     DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     String time = dateTime.format(new Date(location.getTime()));
     gpxText += "<time>" + time + "</time></trkpt>";
-    if (printWriter != null) {
-      printWriter.println(gpxText);
+    if (mPrintWriter != null) {
+      mPrintWriter.println(gpxText);
     }
   }
 
   private void executeFinishFlow() {
     stopLocationUpdates();
     saveAndCloseFile();
-    wakeLock.release();
+    mWakeLock.release();
   }
 
   private void stopLocationUpdates() {
@@ -239,20 +231,20 @@ public class RecordLocationService extends Service {
       stopSelf();
     }
     // Remove the listener previously added.
-    locationManager.removeUpdates(locationListener);
+    mLocationManager.removeUpdates(mLocationListener);
   }
 
   private void saveAndCloseFile() {
-    if (printWriter != null && fileOutputStream != null) {
-      printWriter.println("\t</trkseg></trk>\n" + "</gpx>\n");
-      printWriter.flush();
-      printWriter.close();
+    if (mPrintWriter != null && mFileOutputStream != null) {
+      mPrintWriter.println(Gpx.GPX_FOOTER);
+      mPrintWriter.flush();
+      mPrintWriter.close();
       try {
-        fileOutputStream.close();
+        mFileOutputStream.close();
       } catch (IOException e) {
         e.printStackTrace();
       }
-      finishFlowExecuted = true;
+      mFinishFlowExecuted = true;
       Toast.makeText(this, "File saved", Toast.LENGTH_SHORT).show();
     }
   }

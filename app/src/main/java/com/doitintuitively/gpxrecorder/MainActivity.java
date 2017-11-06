@@ -35,10 +35,10 @@ public class MainActivity extends AppCompatActivity {
   private static final int MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE = 2;
   private static final int MY_PERMISSIONS_ACCESS_FINE_LOCATION = 1;
 
-  private Button buttonStart;
-  private TextView textViewLatLong;
-  private TextView textViewAltitude;
-  private TextView textViewAccuracy;
+  private Button mButtonStart;
+  private TextView mTextViewLatLong;
+  private TextView mTextViewAltitude;
+  private TextView mTextViewAccuracy;
 
   private RecordLocationService mRecordLocationService;
   private boolean mBound = false;
@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
           // We've bound to LocalService, cast the IBinder and get LocalService instance
           RecordLocationBinder binder = (RecordLocationBinder) service;
           mRecordLocationService = binder.getService();
-          mRecordLocationService.setLocationUpdateCallback(locationUpdateCallback);
+          mRecordLocationService.setLocationUpdateCallback(mLocationUpdateCallback);
           mBound = true;
         }
 
@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         }
       };
 
-  private ILocationUpdateCallback locationUpdateCallback =
+  private ILocationUpdateCallback mLocationUpdateCallback =
       new ILocationUpdateCallback() {
         @Override
         public void update(Location location) {
@@ -76,10 +76,10 @@ public class MainActivity extends AppCompatActivity {
 
     checkPermission();
 
-    buttonStart = (Button) findViewById(R.id.button_start);
-    textViewLatLong = (TextView) findViewById(R.id.tv_lat_long);
-    textViewAltitude = (TextView) findViewById(R.id.tv_altitude);
-    textViewAccuracy = (TextView) findViewById(R.id.tv_accuracy);
+    mButtonStart = (Button) findViewById(R.id.button_start);
+    mTextViewLatLong = (TextView) findViewById(R.id.tv_lat_long);
+    mTextViewAltitude = (TextView) findViewById(R.id.tv_altitude);
+    mTextViewAccuracy = (TextView) findViewById(R.id.tv_accuracy);
 
     setUpNotificationChannel();
   }
@@ -105,15 +105,15 @@ public class MainActivity extends AppCompatActivity {
 
   private void setUpStartButton() {
     if (isServiceRunning(RecordLocationService.class)) {
-      buttonStart.setText(getString(R.string.main_stop));
+      mButtonStart.setText(getString(R.string.main_stop));
       // Re-bind to RecordLocationService in case MainActivity was killed and restarted.
       Intent intent = new Intent(MainActivity.this, RecordLocationService.class);
       Log.i(TAG, "re-binding");
       bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     } else {
-      buttonStart.setText(getString(R.string.main_start));
+      mButtonStart.setText(getString(R.string.main_start));
     }
-    buttonStart.setOnClickListener(
+    mButtonStart.setOnClickListener(
         new View.OnClickListener() {
           public void onClick(View v) {
             // If RecordLocationService is running, unbind and stop it.
@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
               intent.setAction(Constants.Action.ACTION_STOP);
               startService(intent);
 
-              buttonStart.setText(getString(R.string.main_start));
+              mButtonStart.setText(getString(R.string.main_start));
             } else {
               checkPermission();
               Log.i(TAG, "Service is not running. Starting service...");
@@ -138,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
               // Bind to RecordLocationService.
               bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
-              buttonStart.setText(getString(R.string.main_stop));
+              mButtonStart.setText(getString(R.string.main_stop));
             }
           }
         });
@@ -263,15 +263,15 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void updateLocationText(Location location) {
-    textViewLatLong.setText(
+    mTextViewLatLong.setText(
         String.format(
             getString(R.string.main_lat_long), location.getLatitude(), location.getLongitude()));
 
     if (location.getProvider().equals("gps")) {
-      textViewAltitude.setText(
+      mTextViewAltitude.setText(
           String.format(getString(R.string.main_altitude), location.getAltitude()));
     }
-    textViewAccuracy.setText(
+    mTextViewAccuracy.setText(
         String.format(getString(R.string.main_accuracy), location.getAccuracy()));
   }
 }

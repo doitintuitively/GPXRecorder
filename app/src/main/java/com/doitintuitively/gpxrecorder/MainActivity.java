@@ -10,6 +10,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -18,6 +19,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -42,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
   private TextView mTextViewAccuracy;
 
   private RecordLocationService mRecordLocationService;
+  private SharedPreferences mSharedPreferences;
   private boolean mBound = false;
   private ServiceConnection mConnection =
       new ServiceConnection() {
@@ -80,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
     mTextViewLatLong = (TextView) findViewById(R.id.tv_lat_long);
     mTextViewAltitude = (TextView) findViewById(R.id.tv_altitude);
     mTextViewAccuracy = (TextView) findViewById(R.id.tv_accuracy);
+    mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
     checkPermission();
     setUpNotificationChannel();
@@ -154,13 +158,21 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
     bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
   }
 
+  /**
+   * Whether we need to show rating agreement.
+   *
+   * @return Whether we need to show rating agreement.
+   */
   private boolean needToShowRatingAlert() {
-    return true;
+    return mSharedPreferences.getBoolean("batteryAlert", true);
   }
 
   /** Write in SharedPreferences that user don't want to show dialog again. */
   private void doNotShowRatingAlertAgain() {
-    // TODO: Write to SharedPreferences.
+    SharedPreferences.Editor editor = mSharedPreferences.edit();
+    // Do not show again.
+    editor.putBoolean("batteryAlert", false);
+    editor.commit();
   }
 
   /**

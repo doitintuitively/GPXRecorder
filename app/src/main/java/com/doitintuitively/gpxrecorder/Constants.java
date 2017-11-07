@@ -11,6 +11,11 @@ final class Constants {
     static final String ACTION_STOP = "stop";
   }
 
+  static class LocationUpdate {
+    static final String MIN_TIME_KEY = "minTime";
+    static final int MIN_TIME_DEFAULT = 0;
+  }
+
   static class Gpx {
     static final String GPX_HEADER =
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"

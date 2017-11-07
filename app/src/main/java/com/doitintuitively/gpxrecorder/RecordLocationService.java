@@ -23,6 +23,7 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 import com.doitintuitively.gpxrecorder.Constants.Gpx;
+import com.doitintuitively.gpxrecorder.Constants.LocationUpdate;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -79,11 +80,12 @@ public class RecordLocationService extends Service {
         setUpWakeLock();
         Toast.makeText(this, "Recording location...", Toast.LENGTH_SHORT).show();
         setUpOutputFile();
-        requestLocationUpdates();
+        int minTime =
+            intent.getIntExtra(LocationUpdate.MIN_TIME_KEY, LocationUpdate.MIN_TIME_DEFAULT);
+        requestLocationUpdates(minTime);
         break;
       case Constants.Action.ACTION_STOP:
         Log.i(TAG, "Stop is called.");
-        Toast.makeText(this, "Recording stopped", Toast.LENGTH_LONG).show();
         executeFinishFlow();
         stopForeground(true);
         stopSelf();
@@ -113,7 +115,7 @@ public class RecordLocationService extends Service {
     mLocationUpdateCallback = callback;
   }
 
-  private void requestLocationUpdates() {
+  private void requestLocationUpdates(int minTime) {
     // Acquire a reference to the system Location Manager
     mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
@@ -141,7 +143,9 @@ public class RecordLocationService extends Service {
       Toast.makeText(getApplicationContext(), "Permission not granted.", Toast.LENGTH_SHORT).show();
       stopSelf();
     }
-    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+    Log.i(TAG, "Requesting location updates with minTime = " + minTime + " sec.");
+    mLocationManager.requestLocationUpdates(
+        LocationManager.GPS_PROVIDER, minTime * 1000, 0, mLocationListener);
   }
 
   public boolean isExternalStorageWritable() {
@@ -246,7 +250,7 @@ public class RecordLocationService extends Service {
         e.printStackTrace();
       }
       mFinishFlowExecuted = true;
-      Toast.makeText(this, "File saved", Toast.LENGTH_SHORT).show();
+      Toast.makeText(this, "Recording stopped and file saved", Toast.LENGTH_SHORT).show();
     }
   }
 }

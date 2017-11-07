@@ -29,6 +29,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.doitintuitively.gpxrecorder.BatteryAlertDialogFragment.BatteryAlertDialogListener;
+import com.doitintuitively.gpxrecorder.Constants.LocationUpdate;
 import com.doitintuitively.gpxrecorder.RecordLocationService.RecordLocationBinder;
 
 /** Main Activity. */
@@ -150,8 +151,15 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
 
   private void startAndBindService() {
     Log.i(TAG, "Service is not running. Starting service...");
+
+    int locationUpdateMinTime =
+        mSharedPreferences.getInt(
+            getString(R.string.pref_update_frequency_key), LocationUpdate.MIN_TIME_DEFAULT);
+    Log.i(TAG, "locationUpdateMinTime: " + locationUpdateMinTime);
+
     Intent intent = new Intent(MainActivity.this, RecordLocationService.class);
     intent.setAction(Constants.Action.ACTION_START);
+    intent.putExtra(LocationUpdate.MIN_TIME_KEY, locationUpdateMinTime);
     startService(intent);
 
     // Bind to RecordLocationService.

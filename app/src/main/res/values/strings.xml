@@ -16,4 +16,7 @@
   <string name="battery_alert_dialog_text">Requesting GPS location consumes battery quickly. Only use the app when you have a charger, or when you don\'t care about battery life. The developer is not responsible for a drained battery :p</string>
   <string name="battery_alert_dialog_do_not_show_again">Do not show again</string>
   <string name="battery_alert_dialog_title">Heads up…</string>
+  <string name="main_permission_location_rationale">This is a GPX recorder app. Please grant permission to access your GPS location.</string>
+  <string name="main_ok">OK</string>
+  <string name="main_permission_file_rationale">We need to write the recorded GPX file to external storage. Please grant storage permission.</string>
 </resources>

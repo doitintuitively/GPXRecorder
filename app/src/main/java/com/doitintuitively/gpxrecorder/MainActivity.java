@@ -15,6 +15,7 @@ import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -32,8 +33,8 @@ import com.doitintuitively.gpxrecorder.RecordLocationService.RecordLocationBinde
 public class MainActivity extends AppCompatActivity implements BatteryAlertDialogListener {
 
   private static final String TAG = "MainActivity";
-  private static final int MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE = 2;
-  private static final int MY_PERMISSIONS_ACCESS_FINE_LOCATION = 1;
+  private static final int REQUEST_CODE_WRITE_EXTERNAL_STORAGE = 2;
+  private static final int REQUEST_CODE_ACCESS_FINE_LOCATION = 1;
 
   private Button mButtonStart;
   private TextView mTextViewLatLong;
@@ -74,33 +75,34 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
 
-    checkPermission();
-
     mButtonStart = (Button) findViewById(R.id.button_start);
+    mButtonStart.setEnabled(false);
     mTextViewLatLong = (TextView) findViewById(R.id.tv_lat_long);
     mTextViewAltitude = (TextView) findViewById(R.id.tv_altitude);
     mTextViewAccuracy = (TextView) findViewById(R.id.tv_accuracy);
 
+    checkPermission();
     setUpNotificationChannel();
   }
 
   private void checkPermission() {
+    boolean shouldEnableStart = true;
     if (ActivityCompat.checkSelfPermission(
                 getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
         && ActivityCompat.checkSelfPermission(
                 getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
             != PackageManager.PERMISSION_GRANTED) {
-      Toast.makeText(getApplicationContext(), "Please grant permission.", Toast.LENGTH_SHORT)
-          .show();
+      shouldEnableStart = false;
       requestLocationPermission();
+    } else {
+      if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+          != PackageManager.PERMISSION_GRANTED) {
+        shouldEnableStart = false;
+        requestFilePermission();
+      }
     }
-    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        != PackageManager.PERMISSION_GRANTED) {
-      Toast.makeText(getApplicationContext(), "Please grant permission.", Toast.LENGTH_SHORT)
-          .show();
-      requestFilePermission();
-    }
+    mButtonStart.setEnabled(shouldEnableStart);
   }
 
   private void setUpStartButton() {
@@ -228,32 +230,58 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
   private void requestLocationPermission() {
     if (ActivityCompat.shouldShowRequestPermissionRationale(
         this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-      ActivityCompat.requestPermissions(
-          this,
-          new String[] {Manifest.permission.ACCESS_FINE_LOCATION},
-          MY_PERMISSIONS_ACCESS_FINE_LOCATION);
+      // Display a SnackBar with an explanation and a button to trigger the request.
+      Snackbar.make(
+              findViewById(R.id.content_main),
+              R.string.main_permission_location_rationale,
+              Snackbar.LENGTH_INDEFINITE)
+          .setAction(
+              R.string.main_ok,
+              new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                  ActivityCompat.requestPermissions(
+                      MainActivity.this,
+                      new String[] {Manifest.permission.ACCESS_FINE_LOCATION},
+                      REQUEST_CODE_ACCESS_FINE_LOCATION);
+                }
+              })
+          .show();
     } else {
       // No explanation needed, we can request the permission.
       ActivityCompat.requestPermissions(
           this,
           new String[] {Manifest.permission.ACCESS_FINE_LOCATION},
-          MY_PERMISSIONS_ACCESS_FINE_LOCATION);
+          REQUEST_CODE_ACCESS_FINE_LOCATION);
     }
   }
 
   private void requestFilePermission() {
     if (ActivityCompat.shouldShowRequestPermissionRationale(
         this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-      ActivityCompat.requestPermissions(
-          this,
-          new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE},
-          MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE);
+      // Display a SnackBar with an explanation and a button to trigger the request.
+      Snackbar.make(
+              findViewById(R.id.content_main),
+              R.string.main_permission_file_rationale,
+              Snackbar.LENGTH_INDEFINITE)
+          .setAction(
+              R.string.main_ok,
+              new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                  ActivityCompat.requestPermissions(
+                      MainActivity.this,
+                      new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                      REQUEST_CODE_WRITE_EXTERNAL_STORAGE);
+                }
+              })
+          .show();
     } else {
       // No explanation needed, we can request the permission.
       ActivityCompat.requestPermissions(
           this,
           new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE},
-          MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE);
+          REQUEST_CODE_WRITE_EXTERNAL_STORAGE);
     }
   }
 
@@ -261,20 +289,20 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
   public void onRequestPermissionsResult(
       int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
     switch (requestCode) {
-      case MY_PERMISSIONS_ACCESS_FINE_LOCATION:
+      case REQUEST_CODE_ACCESS_FINE_LOCATION:
         // If request is cancelled, the result arrays are empty.
         if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-          Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
-          finish();
+          Toast.makeText(this, "Location permission not granted", Toast.LENGTH_SHORT).show();
         }
+        checkPermission();
         break;
 
-      case MY_PERMISSIONS_WRITE_EXTERNAL_STORAGE:
+      case REQUEST_CODE_WRITE_EXTERNAL_STORAGE:
         // If request is cancelled, the result arrays are empty.
         if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-          Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
-          finish();
+          Toast.makeText(this, "Storage permission not granted", Toast.LENGTH_SHORT).show();
         }
+        checkPermission();
         break;
       default:
     }

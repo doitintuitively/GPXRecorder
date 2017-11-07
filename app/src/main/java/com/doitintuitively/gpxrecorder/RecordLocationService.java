@@ -34,10 +34,10 @@ import java.util.Date;
 import java.util.TimeZone;
 
 /**
- * Foreground service that records GPS locations to a GPX file.
- * Note that not only does this service execute in the foreground, but also holds the wakelock to
- * prevent the device from sleeping. This impacts battery life, but it's doing what the user
- * has requested, i.e. to record location over time.
+ * Foreground service that records GPS locations to a GPX file. Note that not only does this service
+ * execute in the foreground, but also holds the wakelock to prevent the device from sleeping. This
+ * impacts battery life, but it's doing what the user has requested, i.e. to record location over
+ * time.
  */
 public class RecordLocationService extends Service {
 
@@ -52,6 +52,7 @@ public class RecordLocationService extends Service {
   private LocationListener mLocationListener;
   // Binder given to clients
   private final IBinder mBinder = new RecordLocationBinder();
+
   class RecordLocationBinder extends Binder {
     RecordLocationService getService() {
       return RecordLocationService.this;
@@ -67,7 +68,7 @@ public class RecordLocationService extends Service {
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
-    if (intent.getAction() == null) {
+    if (intent == null || intent.getAction() == null) {
       Log.e(TAG, "No action provided.");
       stopSelf();
     }

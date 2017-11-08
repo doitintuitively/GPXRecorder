@@ -1,6 +1,14 @@
 package com.doitintuitively.gpxrecorder;
 
 final class Constants {
+  static class File {
+    static final String FILE_DIRECTORY = "/gpx_recorder";
+  }
+
+  static class Ui {
+    static final int FILE_SAVED_SNACK_BAR_DURATION = 5000;
+  }
+
   static class Notification {
     static final int NOTIFICATION_ID = 1;
     static final String DEFAULT_CHANNEL_ID = "channel 1";

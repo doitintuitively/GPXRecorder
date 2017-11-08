@@ -19,4 +19,7 @@
   <string name="main_permission_location_rationale">This is a GPX recorder app. Please grant permission to access your GPS location.</string>
   <string name="main_ok">OK</string>
   <string name="main_permission_file_rationale">We need to write the recorded GPX file to external storage. Please grant storage permission.</string>
+  <string name="main_file_saved">File saved at</string>
+  <string name="main_share">Share</string>
+  <string name="main_share_title">Share to</string>
 </resources>

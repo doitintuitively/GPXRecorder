@@ -13,6 +13,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
@@ -30,6 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.doitintuitively.gpxrecorder.BatteryAlertDialogFragment.BatteryAlertDialogListener;
 import com.doitintuitively.gpxrecorder.Constants.LocationUpdate;
+import com.doitintuitively.gpxrecorder.Constants.Ui;
 import com.doitintuitively.gpxrecorder.RecordLocationService.RecordLocationBinder;
 
 /** Main Activity. */
@@ -125,6 +127,9 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
           public void onClick(View v) {
             // If RecordLocationService is running, unbind and stop it.
             if (isServiceRunning(RecordLocationService.class)) {
+              String storageDir = mRecordLocationService.getStorageDir();
+              String fileName = mRecordLocationService.getFileName();
+              Log.i(TAG, "File name retrieved from service: " + storageDir + "/" + fileName);
               Log.i(TAG, "Unbinding service");
               unbindService(mConnection);
               mBound = false;
@@ -132,6 +137,8 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
               Intent intent = new Intent(MainActivity.this, RecordLocationService.class);
               intent.setAction(Constants.Action.ACTION_STOP);
               startService(intent);
+
+              showFileSavedSnackBar(storageDir, fileName);
 
               mButtonStart.setText(getString(R.string.main_start));
             } else {
@@ -374,5 +381,34 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
     }
     mTextViewAccuracy.setText(
         String.format(getString(R.string.main_accuracy), location.getAccuracy()));
+  }
+
+  /**
+   * Show a SnackBar to let the user know where the file is saved, and share it.
+   *
+   * @param storageDir Directory containing the saved file.
+   * @param fileName Name of the saved file.
+   */
+  private void showFileSavedSnackBar(String storageDir, String fileName) {
+    if (storageDir == null || fileName == null) {
+      return;
+    }
+    final String filePath = storageDir + "/" + fileName;
+    String message = getString(R.string.main_file_saved) + " " + filePath + ".";
+    Snackbar.make(findViewById(R.id.content_main), message, Ui.FILE_SAVED_SNACK_BAR_DURATION)
+        .setAction(
+            R.string.main_share,
+            new View.OnClickListener() {
+              @Override
+              public void onClick(View view) {
+                Intent shareIntent = new Intent();
+                shareIntent.setAction(Intent.ACTION_SEND);
+                shareIntent.putExtra(Intent.EXTRA_STREAM, Uri.parse(filePath));
+                shareIntent.setType("*/*");
+                startActivity(
+                    Intent.createChooser(shareIntent, getString(R.string.main_share_title)));
+              }
+            })
+        .show();
   }
 }

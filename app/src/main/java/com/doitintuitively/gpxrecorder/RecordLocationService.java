@@ -51,6 +51,8 @@ public class RecordLocationService extends Service {
   private WakeLock mWakeLock;
   private LocationManager mLocationManager;
   private LocationListener mLocationListener;
+  private String mFileName;
+  private String mStorageDir;
   // Binder given to clients
   private final IBinder mBinder = new RecordLocationBinder();
 
@@ -115,6 +117,14 @@ public class RecordLocationService extends Service {
     mLocationUpdateCallback = callback;
   }
 
+  public String getFileName() {
+    return mFileName;
+  }
+
+  public String getStorageDir() {
+    return mStorageDir;
+  }
+
   private void requestLocationUpdates(int minTime) {
     // Acquire a reference to the system Location Manager
     mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -156,14 +166,16 @@ public class RecordLocationService extends Service {
     SimpleDateFormat dateTime = new SimpleDateFormat("yyyyMMdd_HHmmss");
     dateTime.setTimeZone(TimeZone.getDefault());
     String currentDateAndTime = dateTime.format(new Date());
-    String fileName = currentDateAndTime + ".gpx";
-    Log.d(TAG, fileName);
+    mFileName = currentDateAndTime + ".gpx";
+    Log.d(TAG, "File name: " + mFileName);
 
     if (isExternalStorageWritable()) {
-      String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/gpx_recorder";
-      File storageDir = new File(path);
+      mStorageDir =
+          Environment.getExternalStorageDirectory().getAbsolutePath()
+              + Constants.File.FILE_DIRECTORY;
+      File storageDir = new File(mStorageDir);
       storageDir.mkdirs();
-      File file = new File(storageDir, fileName);
+      File file = new File(storageDir, mFileName);
       try {
         mFileOutputStream = new FileOutputStream(file);
         mPrintWriter = new PrintWriter(mFileOutputStream);
@@ -250,7 +262,6 @@ public class RecordLocationService extends Service {
         e.printStackTrace();
       }
       mFinishFlowExecuted = true;
-      Toast.makeText(this, "Recording stopped and file saved", Toast.LENGTH_SHORT).show();
     }
   }
 }

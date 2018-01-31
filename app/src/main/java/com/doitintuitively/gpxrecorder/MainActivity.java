@@ -33,9 +33,17 @@ import com.doitintuitively.gpxrecorder.BatteryAlertDialogFragment.BatteryAlertDi
 import com.doitintuitively.gpxrecorder.Constants.LocationUpdate;
 import com.doitintuitively.gpxrecorder.Constants.Ui;
 import com.doitintuitively.gpxrecorder.RecordLocationService.RecordLocationBinder;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 /** Main Activity. */
-public class MainActivity extends AppCompatActivity implements BatteryAlertDialogListener {
+public class MainActivity extends AppCompatActivity implements BatteryAlertDialogListener,
+    OnMapReadyCallback {
 
   private static final String TAG = "MainActivity";
   private static final int REQUEST_CODE_WRITE_EXTERNAL_STORAGE = 2;
@@ -45,6 +53,7 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
   private TextView mTextViewLatLong;
   private TextView mTextViewAltitude;
   private TextView mTextViewAccuracy;
+  private GoogleMap mMap;
 
   private RecordLocationService mRecordLocationService;
   private SharedPreferences mSharedPreferences;
@@ -88,8 +97,31 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
     mTextViewAccuracy = findViewById(R.id.tv_accuracy);
     mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
+    // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+    SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+        .findFragmentById(R.id.map);
+    mapFragment.getMapAsync(this);
+
     checkPermission();
     setUpNotificationChannel();
+  }
+
+  /**
+   * Manipulates the map once available.
+   * This callback is triggered when the map is ready to be used.
+   * This is where we can add markers or lines, add listeners or move the camera. In this case,
+   * we just add a marker near Sydney, Australia.
+   * If Google Play services is not installed on the device, the user will be prompted to install
+   * it inside the SupportMapFragment. This method will only be triggered once the user has
+   * installed Google Play services and returned to the app.
+   */
+  @Override
+  public void onMapReady(GoogleMap googleMap) {
+    mMap = googleMap;
+    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        == PackageManager.PERMISSION_GRANTED) {
+      mMap.setMyLocationEnabled(true);
+    }
   }
 
   private void checkPermission() {

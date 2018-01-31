@@ -78,14 +78,14 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-    Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+    Toolbar toolbar = findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
 
-    mButtonStart = (Button) findViewById(R.id.button_start);
+    mButtonStart = findViewById(R.id.button_start);
     mButtonStart.setEnabled(false);
-    mTextViewLatLong = (TextView) findViewById(R.id.tv_lat_long);
-    mTextViewAltitude = (TextView) findViewById(R.id.tv_altitude);
-    mTextViewAccuracy = (TextView) findViewById(R.id.tv_accuracy);
+    mTextViewLatLong = findViewById(R.id.tv_lat_long);
+    mTextViewAltitude = findViewById(R.id.tv_altitude);
+    mTextViewAccuracy = findViewById(R.id.tv_accuracy);
     mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
     checkPermission();
@@ -112,9 +112,9 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
     mButtonStart.setEnabled(shouldEnableStart);
   }
 
-  private void setUpStartButton() {
+  private void setUpUi() {
     if (isServiceRunning(RecordLocationService.class)) {
-      mButtonStart.setText(getString(R.string.main_stop));
+      setUpRecordingUi();
       // Re-bind to RecordLocationService in case MainActivity was killed and restarted.
       Intent intent = new Intent(MainActivity.this, RecordLocationService.class);
       Log.i(TAG, "re-binding");
@@ -130,17 +130,17 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
               String storageDir = mRecordLocationService.getStorageDir();
               String fileName = mRecordLocationService.getFileName();
               Log.i(TAG, "File name retrieved from service: " + storageDir + "/" + fileName);
+
               Log.i(TAG, "Unbinding service");
               unbindService(mConnection);
               mBound = false;
-
+              Log.i(TAG, "Stopping service");
               Intent intent = new Intent(MainActivity.this, RecordLocationService.class);
               intent.setAction(Constants.Action.ACTION_STOP);
               startService(intent);
 
               showFileSavedSnackBar(storageDir, fileName);
-
-              mButtonStart.setText(getString(R.string.main_start));
+              tearDownRecordingUi();
             } else {
               checkPermission();
               // Show battery alert before proceeding.
@@ -148,12 +148,24 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
               if (needToShowBatteryAlert()) {
                 dialog.show(getFragmentManager(), "Alert");
               } else {
+                setUpRecordingUi();
                 startAndBindService();
-                mButtonStart.setText(getString(R.string.main_stop));
               }
             }
           }
         });
+  }
+
+  private void setUpRecordingUi() {
+    mTextViewLatLong.setText(getString(R.string.waiting_for_location));
+    mButtonStart.setText(getString(R.string.main_stop));
+  }
+
+  private void tearDownRecordingUi() {
+    mTextViewLatLong.setText(getString(R.string.recording_stopped));
+    mTextViewAltitude.setText("");
+    mTextViewAccuracy.setText("");
+    mButtonStart.setText(getString(R.string.main_start));
   }
 
   private void startAndBindService() {
@@ -198,8 +210,8 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
   @Override
   public void onDialogPositiveClick(DialogFragment dialog) {
     Log.d(TAG, "User agreed to start.");
+    setUpRecordingUi();
     startAndBindService();
-    mButtonStart.setText(getString(R.string.main_stop));
   }
 
   /**
@@ -211,8 +223,8 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
   public void onDialogPositiveClickWithChecked(DialogFragment dialog) {
     Log.d(TAG, "User agreed to submit and do not show again");
     doNotShowBatteryAlertAgain();
+    setUpRecordingUi();
     startAndBindService();
-    mButtonStart.setText(getString(R.string.main_stop));
   }
 
   /**
@@ -356,7 +368,7 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
   @Override
   public void onStart() {
     super.onStart();
-    setUpStartButton();
+    setUpUi();
   }
 
   @Override

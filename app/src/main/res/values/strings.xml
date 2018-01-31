@@ -22,4 +22,6 @@
   <string name="main_file_saved">File saved at</string>
   <string name="main_share">Share</string>
   <string name="main_share_title">Share to</string>
+  <string name="waiting_for_location">Requesting location...</string>
+  <string name="recording_stopped">Recording stopped</string>
 </resources>

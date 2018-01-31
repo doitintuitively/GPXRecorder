@@ -65,9 +65,6 @@
             </value>
           </option>
         </AndroidXmlCodeStyleSettings>
-        <JSCodeStyleSettings>
-          <option name="INDENT_CHAINED_CALLS" value="false" />
-        </JSCodeStyleSettings>
         <Objective-C>
           <option name="INDENT_NAMESPACE_MEMBERS" value="0" />
           <option name="INDENT_C_STRUCT_MEMBERS" value="2" />
@@ -107,12 +104,6 @@
             <pair source="c" header="h" />
           </extensions>
         </Objective-C-extensions>
-        <Python>
-          <option name="USE_CONTINUATION_INDENT_FOR_ARGUMENTS" value="true" />
-        </Python>
-        <TypeScriptCodeStyleSettings>
-          <option name="INDENT_CHAINED_CALLS" value="false" />
-        </TypeScriptCodeStyleSettings>
         <XML>
           <option name="XML_ALIGN_ATTRIBUTES" value="false" />
           <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />

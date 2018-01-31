@@ -145,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
               checkPermission();
               // Show battery alert before proceeding.
               BatteryAlertDialogFragment dialog = new BatteryAlertDialogFragment();
-              if (needToShowRatingAlert()) {
+              if (needToShowBatteryAlert()) {
                 dialog.show(getFragmentManager(), "Alert");
               } else {
                 startAndBindService();
@@ -178,12 +178,12 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
    *
    * @return Whether we need to show rating agreement.
    */
-  private boolean needToShowRatingAlert() {
+  private boolean needToShowBatteryAlert() {
     return mSharedPreferences.getBoolean("batteryAlert", true);
   }
 
   /** Write in SharedPreferences that user don't want to show dialog again. */
-  private void doNotShowRatingAlertAgain() {
+  private void doNotShowBatteryAlertAgain() {
     SharedPreferences.Editor editor = mSharedPreferences.edit();
     // Do not show again.
     editor.putBoolean("batteryAlert", false);
@@ -193,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
   /**
    * When user pressed agree.
    *
-   * @param dialog RatingAlertDialogFragment.
+   * @param dialog BatteryAlertDialogFragment.
    */
   @Override
   public void onDialogPositiveClick(DialogFragment dialog) {
@@ -205,12 +205,12 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
   /**
    * When user pressed agree with do not show again.
    *
-   * @param dialog RatingAlertDialogFragment.
+   * @param dialog BatteryAlertDialogFragment.
    */
   @Override
   public void onDialogPositiveClickWithChecked(DialogFragment dialog) {
     Log.d(TAG, "User agreed to submit and do not show again");
-    doNotShowRatingAlertAgain();
+    doNotShowBatteryAlertAgain();
     startAndBindService();
     mButtonStart.setText(getString(R.string.main_stop));
   }

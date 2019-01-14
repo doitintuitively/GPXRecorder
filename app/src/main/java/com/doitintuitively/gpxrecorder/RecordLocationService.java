@@ -73,7 +73,9 @@ public class RecordLocationService extends Service {
   public int onStartCommand(Intent intent, int flags, int startId) {
     if (intent == null || intent.getAction() == null) {
       Log.e(TAG, "No action provided.");
+      Log.e(TAG, "flags=" + flags + " bits=" + Integer.toBinaryString (flags));
       stopSelf();
+      return START_STICKY;
     }
     switch (intent.getAction()) {
       case Constants.Action.ACTION_START:
@@ -236,7 +238,9 @@ public class RecordLocationService extends Service {
   private void executeFinishFlow() {
     stopLocationUpdates();
     saveAndCloseFile();
-    mWakeLock.release();
+    if (mWakeLock != null) {
+      mWakeLock.release();
+    }
   }
 
   private void stopLocationUpdates() {
@@ -248,7 +252,9 @@ public class RecordLocationService extends Service {
       stopSelf();
     }
     // Remove the listener previously added.
-    mLocationManager.removeUpdates(mLocationListener);
+    if (mLocationListener != null) {
+      mLocationManager.removeUpdates(mLocationListener);
+    }
   }
 
   private void saveAndCloseFile() {

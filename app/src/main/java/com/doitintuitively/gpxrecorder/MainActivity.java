@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -35,11 +36,13 @@ import com.doitintuitively.gpxrecorder.Constants.Ui;
 import com.doitintuitively.gpxrecorder.RecordLocationService.RecordLocationBinder;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Main Activity. */
 public class MainActivity extends AppCompatActivity implements BatteryAlertDialogListener,
@@ -54,6 +57,10 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
   private TextView mTextViewAltitude;
   private TextView mTextViewAccuracy;
   private GoogleMap mMap;
+
+  private List<LatLng> latLngs = new ArrayList<>();
+  private List<Polyline> polylines = new ArrayList<>();
+  private boolean firstDraw = true;
 
   private RecordLocationService mRecordLocationService;
   private SharedPreferences mSharedPreferences;
@@ -80,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
         @Override
         public void update(Location location) {
           updateLocationText(location);
+          updateLocationMap(location);
         }
       };
 
@@ -122,6 +130,9 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
         == PackageManager.PERMISSION_GRANTED) {
       mMap.setMyLocationEnabled(true);
     }
+    mMap.setIndoorEnabled(false);
+    mMap.setBuildingsEnabled(false);
+    mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
   }
 
   private void checkPermission() {
@@ -425,6 +436,36 @@ public class MainActivity extends AppCompatActivity implements BatteryAlertDialo
     }
     mTextViewAccuracy.setText(
         String.format(getString(R.string.main_accuracy), location.getAccuracy()));
+  }
+
+  private void generateRandomPoints() {
+    for (int i = 0; i < 100; ++i) {
+      LatLng latLng = new LatLng(Math.random() * 180 - 90, Math.random() * 360 - 180);
+      latLngs.add(latLng);
+    }
+  }
+
+  private void updateLocationMap(Location location) {
+    if (mMap == null) {
+      return;
+    }
+    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+    if (firstDraw) {
+      firstDraw = false;
+      mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, Ui.DEFAULT_ZOOM_LEVEL));
+    }
+    latLngs.add(latLng);
+    for (Polyline polyline : polylines) {
+      polyline.remove();
+    }
+    polylines.clear();
+    Polyline polyline = mMap.addPolyline(new PolylineOptions()
+        .width(10)
+        .color(Color.BLUE)
+        .geodesic(false)
+        .zIndex(3));
+    polyline.setPoints(latLngs);
+    polylines.add(polyline);
   }
 
   /**

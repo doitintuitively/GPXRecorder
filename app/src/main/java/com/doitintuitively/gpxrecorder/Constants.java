@@ -7,7 +7,6 @@ final class Constants {
 
   static class Ui {
     static final int FILE_SAVED_SNACK_BAR_DURATION = 5000;
-    static final float DEFAULT_ZOOM_LEVEL = 17;
   }
 
   static class Notification {

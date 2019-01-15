@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    buildToolsVersion '28.0.3'
     defaultConfig {
         applicationId "com.doitintuitively.gpxrecorder"
         minSdkVersion 15
@@ -15,13 +15,6 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            resValue "string", "google_maps_api_key", API_KEY
-        }
-
-        debug {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            resValue "string", "google_maps_api_key", DEBUG_API_KEY
         }
     }
 }
@@ -35,5 +28,4 @@ dependencies {
     implementation 'com.android.support:design:27.0.0'
     testImplementation 'junit:junit:4.12'
     implementation 'com.android.support:preference-v7:27.0.0'
-    implementation 'com.google.android.gms:play-services-maps:11.8.0'
 }

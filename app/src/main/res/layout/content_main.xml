@@ -13,14 +13,6 @@
   tools:context="com.doitintuitively.gpxrecorder.MainActivity"
   tools:showIn="@layout/activity_main">
 
-  <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/map"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_above="@+id/tv_lat_long"
-    android:layout_marginBottom="10dp"
-    android:name="com.google.android.gms.maps.SupportMapFragment"/>
   <TextView
     android:id="@+id/tv_lat_long"
     android:layout_width="wrap_content"
@@ -29,7 +21,7 @@
     android:layout_centerHorizontal="true"
     android:text=""
     android:textAppearance="@style/TextAppearance.AppCompat.Headline"
-    android:textSize="18sp"/>
+    android:textSize="22sp"/>
   <TextView
     android:id="@+id/tv_altitude"
     android:layout_width="wrap_content"
@@ -38,17 +30,17 @@
     android:layout_centerHorizontal="true"
     android:text=""
     android:textAppearance="@style/TextAppearance.AppCompat.Headline"
-    android:textSize="18sp"/>
+    android:textSize="22sp"/>
   <TextView
     android:id="@+id/tv_accuracy"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_marginBottom="10dp"
-    android:layout_above="@+id/button_start"
+    android:layout_centerInParent="true"
     android:layout_centerHorizontal="true"
     android:text=""
     android:textAppearance="@style/TextAppearance.AppCompat.Headline"
-    android:textSize="18sp"/>
+    android:textSize="22sp"/>
   <Button
     android:id="@+id/button_start"
     android:layout_width="wrap_content"

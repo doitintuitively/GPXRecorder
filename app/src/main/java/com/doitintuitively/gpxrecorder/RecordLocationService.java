@@ -227,7 +227,7 @@ public class RecordLocationService extends Service {
     if (location.getProvider().equals("gps")) {
       gpxText += "<ele>" + location.getAltitude() + "</ele>";
     }
-    DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     String time = dateTime.format(new Date(location.getTime()));
     gpxText += "<time>" + time + "</time></trkpt>";
     if (mPrintWriter != null) {

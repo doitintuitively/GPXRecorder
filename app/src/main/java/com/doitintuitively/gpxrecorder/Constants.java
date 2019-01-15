@@ -27,8 +27,12 @@ final class Constants {
   static class Gpx {
     static final String GPX_HEADER =
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            + "<gpx version=\"1.0\">\n"
-            + "\t<name>Example gpx</name>\n"
+            + "<gpx version=\"1.0\" creator=\"GPX Recorder\"\n"
+            + "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
+            + "xmlns=\"http://www.topografix.com/GPX/1/0\"\n"
+            + "xsi:schemaLocation=\"http://www.topografix.com/GPX/1/0\n"
+            + "http://www.topografix.com/GPX/1/0/gpx.xsd\">\n"
+            + "\t<name>GPX</name>\n"
             + "\t<trk><name>Track</name><number>1</number><trkseg>";
     static final String GPX_FOOTER = "\t</trkseg></trk>\n" + "</gpx>\n";
   }

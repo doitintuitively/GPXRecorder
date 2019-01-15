@@ -33,7 +33,6 @@ import com.doitintuitively.gpxrecorder.BatteryAlertDialogFragment.BatteryAlertDi
 import com.doitintuitively.gpxrecorder.Constants.LocationUpdate;
 import com.doitintuitively.gpxrecorder.Constants.Ui;
 import com.doitintuitively.gpxrecorder.RecordLocationService.RecordLocationBinder;
-import java.util.ArrayList;
 
 /** Main Activity. */
 public class MainActivity extends AppCompatActivity implements BatteryAlertDialogListener {
